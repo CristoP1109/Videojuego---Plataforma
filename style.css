@@ -1,0 +1,44 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 0%, #1b1030 0%, #0a0614 70%);
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: #cfc6e8;
+}
+
+#wrap {
+  text-align: center;
+}
+
+canvas {
+  display: block;
+  background: #0a0614;
+  border: 2px solid #6a4bb0;
+  border-radius: 10px;
+  box-shadow: 0 0 40px rgba(150, 80, 255, 0.35);
+  max-width: 96vw;
+  height: auto;
+}
+
+.hint {
+  margin-top: 12px;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+  opacity: 0.85;
+}
+
+.hint b {
+  color: #ff3b6b;
+}
