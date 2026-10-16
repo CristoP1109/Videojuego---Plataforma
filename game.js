@@ -1380,9 +1380,6 @@ function drawPlayer() {
   ctx.scale(1 + sq * 0.18, 1 - sq * 0.32);
   ctx.translate(-(p.x + p.w / 2), -(p.y + p.h));
 
-  const bodyH = p.h - 10;
-  const bodyY = p.y + 10;
-
   // Paño/estela por detras (antes del cuerpo)
   if (p.scarf.length > 1) {
     ctx.strokeStyle = "#ff3b6b";
@@ -1398,7 +1395,6 @@ function drawPlayer() {
 
   const bodyH = p.h - 12;
   const bodyY = p.y + 12;
-
   const legSwing = p.onGround && Math.abs(p.vx) > 30 ? Math.sin(p.runPhase) * 6 : 0;
   const legH = 16;
   ctx.fillStyle = "#0d0818";
