@@ -33,6 +33,13 @@ const ATTACK_CD = 0.30;
 const ATTACK_RANGE = 48;
 const MAGNET_RADIUS = 115;
 
+// Camara y "game feel"
+const CAM_DEADZONE = 70;      // banda donde la camara no se mueve
+const CAM_SMOOTH = 10;        // rigidez del suavizado
+const CAM_LOOKAHEAD = 0.12;   // anticipacion segun velocidad del jugador
+const SHAKE_MAX = 15;         // desplazamiento maximo del temblor (px)
+const SHAKE_DECAY = 1.9;      // velocidad a la que baja el temblor
+
 let LEVEL_W = 2000; // se redefine al cargar cada nivel
 
 // ----- 2. ENTRADA (TECLADO) -----
@@ -334,8 +341,19 @@ function overlap(a, b) {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
 
+function addShake(amount) {
+  shake = Math.min(1, shake + amount);
+}
+
+function addHitstop(t) {
+  hitstop = Math.max(hitstop, t);
+}
+
 // ----- 7. ESTADO Y REINICIO -----
 let camera = { x: 0 };
+let shake = 0;                 // 0..1 "trauma" acumulado
+let shakeX = 0, shakeY = 0;    // offset actual aplicado al mundo
+let hitstop = 0;               // congelacion breve en impactos (segundos)
 let score = 0;
 let state = "menu"; // menu | playing | dead | win | shop
 
@@ -364,6 +382,10 @@ function reset() {
   player.shield = lvl("shield") > 0 ? 1 : 0;
 
   camera.x = 0;
+  shake = 0;
+  shakeX = 0;
+  shakeY = 0;
+  hitstop = 0;
   score = 0;
   runCoins = 0;
 
@@ -449,6 +471,7 @@ function updatePlayer(dt) {
       p.coyote = 0;
       p.onGround = false;
       p.dashTime = 0;
+      p.landSquash = -0.5;
       spawnDust(p.x + p.w / 2, p.y + p.h, 4);
     }
 
@@ -482,12 +505,14 @@ function updatePlayer(dt) {
     }
   }
 
-  // Aterrizaje: efecto squash + polvo
+  // Aterrizaje: efecto squash + polvo + temblor
   if (!wasAir && p.onGround && fallSpeed > 420) {
     p.landSquash = 1;
     spawnDust(p.x + p.w / 2, p.y + p.h, 8);
+    addShake(0.12);
   }
   if (p.landSquash > 0) p.landSquash = Math.max(0, p.landSquash - dt * 5);
+  else if (p.landSquash < 0) p.landSquash = Math.min(0, p.landSquash + dt * 6);
 
   // Animacion de correr
   if (p.onGround && Math.abs(p.vx) > 30) p.runPhase += dt * 14;
@@ -551,11 +576,19 @@ function doAttackHit() {
 function hurtEnemy(e, dmg) {
   e.hp -= dmg;
   e.flash = 0.16;
+  const away = Math.sign(e.x + e.w / 2 - (player.x + player.w / 2)) || 1;
+  e.stun = 0.14;
+  e.kx = away * 220;
   if (e.hp <= 0) {
     e.alive = false;
     score++;
     dropCoins(e);
     spawnBurst(e.x + e.w / 2, e.y + e.h / 2, "#7d5bd6", 12);
+    addShake(0.35);
+    addHitstop(0.07);
+  } else {
+    addShake(0.16);
+    addHitstop(0.04);
   }
 }
 
@@ -576,6 +609,15 @@ function updateEnemies(dt) {
     if (!e.alive) continue;
     e.t += dt;
     if (e.flash > 0) e.flash -= dt;
+
+    // Retroceso breve al ser golpeado
+    if (e.stun > 0) {
+      e.stun -= dt;
+      e.x += e.kx * dt;
+      e.kx *= 0.85;
+      e.x = clamp(e.x, e.minX, e.maxX - e.w);
+      continue;
+    }
 
     if (e.type === "walker") {
       e.x += e.dir * e.speed * dt;
@@ -629,6 +671,7 @@ function updateEnemies(dt) {
           fireProjectile(e);
           e.shootTimer = 2.2 + Math.random() * 0.6;
         }
+        addShake(0.14);
       }
     }
   }
@@ -701,6 +744,7 @@ function damagePlayer(amount, sourceX) {
     p.shield = 0;
     p.invuln = 1.2;
     floaters.push({ x: p.x + p.w / 2, y: p.y - 6, life: 0.8, text: "ESCUDO" });
+    addShake(0.3);
     return;
   }
   p.hp -= amount;
@@ -710,7 +754,9 @@ function damagePlayer(amount, sourceX) {
   p.vy = -340;
   p.dashTime = 0;
   spawnBurst(p.x + p.w / 2, p.y + p.h / 2, "#ff3b6b", 8);
-  if (p.hp <= 0) { p.hp = 0; state = "dead"; }
+  addShake(0.45);
+  addHitstop(0.06);
+  if (p.hp <= 0) { p.hp = 0; state = "dead"; addShake(0.6); }
 }
 
 function pitFall() {
@@ -815,8 +861,28 @@ function updateParticles(dt) {
   }
 }
 
-function updateCamera() {
-  camera.x = clamp(player.x + player.w / 2 - W / 2, 0, LEVEL_W - W);
+function updateCamera(dt) {
+  const p = player;
+  // Punto de interes: centro del jugador con anticipacion segun su velocidad
+  const look = clamp(p.vx * CAM_LOOKAHEAD, -60, 60);
+  const centerX = p.x + p.w / 2 + look;
+
+  // Zona muerta: la camara solo se mueve si el jugador sale de la banda central
+  const half = W / 2;
+  const screenX = p.x + p.w / 2 - camera.x;
+  let desired = camera.x;
+  if (screenX > half + CAM_DEADZONE) desired = centerX - (half + CAM_DEADZONE);
+  else if (screenX < half - CAM_DEADZONE) desired = centerX - (half - CAM_DEADZONE);
+
+  // Suavizado independiente del framerate
+  const k = 1 - Math.exp(-CAM_SMOOTH * dt);
+  camera.x += (clamp(desired, 0, LEVEL_W - W) - camera.x) * k;
+
+  // Temblor por trauma
+  shake = Math.max(0, shake - dt * SHAKE_DECAY);
+  const mag = SHAKE_MAX * shake * shake;
+  shakeX = (Math.random() * 2 - 1) * mag;
+  shakeY = (Math.random() * 2 - 1) * mag;
 }
 
 // ----- 10. DIBUJO -----
@@ -1354,7 +1420,7 @@ function render() {
   drawBackground();
 
   ctx.save();
-  ctx.translate(-camera.x, 0);
+  ctx.translate(-camera.x + shakeX, shakeY);
 
   drawPlatforms();
   drawGoal();
@@ -1389,24 +1455,28 @@ function loop(now) {
   dt = Math.min(dt, 1 / 30);
 
   if (state === "playing") {
-    updatePlayer(dt);
-    updateEnemies(dt);
-    updateProjectiles(dt);
-    updateCoins(dt);
-    updateFloaters(dt);
-    updateParticles(dt);
-    updateCamera();
+    if (hitstop > 0) {
+      hitstop -= dt;
+    } else {
+      updatePlayer(dt);
+      updateEnemies(dt);
+      updateProjectiles(dt);
+      updateCoins(dt);
+      updateFloaters(dt);
+      updateParticles(dt);
 
-    if (overlap(player, goal)) {
-      const bossAlive = enemies.some((e) => e.alive && e.type === "boss");
-      if (bossGates && bossAlive) {
-        if (Math.random() < 0.03) {
-          floaters.push({ x: goal.x, y: goal.y + 30, life: 1, text: "Derrota al jefe!" });
+      if (overlap(player, goal)) {
+        const bossAlive = enemies.some((e) => e.alive && e.type === "boss");
+        if (bossGates && bossAlive) {
+          if (Math.random() < 0.03) {
+            floaters.push({ x: goal.x, y: goal.y + 30, life: 1, text: "Derrota al jefe!" });
+          }
+        } else {
+          state = "win";
         }
-      } else {
-        state = "win";
       }
     }
+    updateCamera(dt);
   }
 
   render();
