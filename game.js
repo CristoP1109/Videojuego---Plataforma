@@ -40,6 +40,28 @@ const CAM_LOOKAHEAD = 0.12;   // anticipacion segun velocidad del jugador
 const SHAKE_MAX = 15;         // desplazamiento maximo del temblor (px)
 const SHAKE_DECAY = 1.9;      // velocidad a la que baja el temblor
 
+// Paleta por ROLES de color (tono arcade con acentos calidos).
+// Cambia aqui y afecta a todo el juego.
+const PAL = {
+  skyTop: "#1a0f30",   // frio arriba
+  skyMid: "#3a1a4a",
+  skyLow: "#7a2f57",
+  glow: "#ff8a3d",     // calor del horizonte
+  moon: "#ffe7c4",
+  far: "#3d2a5c",      // ciudad lejana (clara, humeda por perspectiva atmosferica)
+  mid: "#2a1a45",
+  near: "#1a0f30",     // ciudad cercana (oscura)
+  fg: "#0a0614",       // primer plano (casi negro)
+  outline: "#0a0614",  // contorno grueso tipo arcade
+  winWarm: "rgba(255,176,84,0.85)",
+  winPink: "rgba(255,90,140,0.85)",
+  ground: "#2b1d4d",
+  groundTop: "#7d5bd6",
+  accent: "#ff3b6b",
+  danger: "#ff5b3d",
+  reward: "#f7c948",
+};
+
 let LEVEL_W = 2000; // se redefine al cargar cada nivel
 
 // ----- 2. ENTRADA (TECLADO) -----
@@ -892,51 +914,119 @@ function updateCamera(dt) {
 
 // ----- 10. DIBUJO -----
 function drawBackground() {
+  // Cielo crepusculo: frio arriba, calido en el horizonte
   const sky = ctx.createLinearGradient(0, 0, 0, H);
-  sky.addColorStop(0, "#241448");
-  sky.addColorStop(0.6, "#160a2b");
-  sky.addColorStop(1, "#0a0614");
+  sky.addColorStop(0, PAL.skyTop);
+  sky.addColorStop(0.55, PAL.skyMid);
+  sky.addColorStop(0.82, PAL.skyLow);
+  sky.addColorStop(1, PAL.glow);
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, W, H);
 
-  drawSkyline(0.25, 300, "#1a0f30", 140, 24);
-  drawSkyline(0.5, 370, "#241540", 120, 60);
+  // Resplandor calido del horizonte
+  const glow = ctx.createRadialGradient(W * 0.62, H + 60, 10, W * 0.62, H + 60, H * 1.15);
+  glow.addColorStop(0, "rgba(255,160,74,0.5)");
+  glow.addColorStop(1, "rgba(255,160,74,0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, H);
+
+  drawMoon();
+
+  // Ciudad en 3 capas (perspectiva atmosferica: lejos=claro, cerca=oscuro)
+  drawSkyline(0.12, 320, PAL.far, 150, 30, 0.4);
+  drawSkyline(0.30, 380, PAL.mid, 130, 46, 0.7);
+  drawSkyline(0.55, 430, PAL.near, 150, 72, 1.0);
 }
 
-function drawSkyline(parallax, baseY, color, height, step) {
-  const offset = -camera.x * parallax;
-  ctx.fillStyle = color;
+function drawMoon() {
+  const mx = W * 0.74, my = 118;
+  const g = ctx.createRadialGradient(mx, my, 8, mx, my, 95);
+  g.addColorStop(0, "rgba(255,231,196,0.30)");
+  g.addColorStop(1, "rgba(255,231,196,0)");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(mx, my, 95, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = PAL.moon;
+  ctx.beginPath();
+  ctx.arc(mx, my, 32, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "rgba(205,165,130,0.55)";
+  ctx.beginPath(); ctx.arc(mx - 9, my - 7, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(mx + 9, my + 9, 9, 0, Math.PI * 2); ctx.fill();
+}
+
+function drawSkyline(parallax, baseY, color, height, step, winAlpha) {
+  const offset = -camera.x * parallax + shakeX * parallax;
   const start = Math.floor(-offset / step) * step - step;
-  for (let x = start; x < LEVEL_W; x += step) {
+  for (let x = start; x < LEVEL_W + step; x += step) {
     const bx = x + offset;
-    if (bx < -140 || bx > W + 140) continue;
-    const h = height + ((Math.sin(x * 12.9898) * 43758.5453) % 1 + 1) * 60;
-    ctx.fillRect(bx, baseY - h, step - 6, h + 200);
-    ctx.fillStyle = "rgba(255,90,140,0.20)";
-    for (let wy = baseY - h + 12; wy < baseY - 8; wy += 18) {
-      ctx.fillRect(bx + 6, wy, 6, 8);
-      ctx.fillRect(bx + 18, wy, 6, 8);
-    }
+    if (bx < -200 || bx > W + 200) continue;
+    const r = (Math.sin(x * 12.9898) * 43758.5453) % 1;
+    const h = height + (r + 1) * 70;
     ctx.fillStyle = color;
+    ctx.fillRect(bx, baseY - h, step - 6, h + 220);
+
+    // Ventanas encendidas: mezcla de calido y neon
+    ctx.globalAlpha = winAlpha;
+    for (let wy = baseY - h + 14; wy < baseY - 6; wy += 16) {
+      for (let wx = bx + 6; wx < bx + step - 12; wx += 16) {
+        const on = (Math.sin(wx * 3.1 + wy * 1.7) * 43758.5453) % 1;
+        if (on > 0.42) {
+          ctx.fillStyle = on > 0.72 ? PAL.winPink : PAL.winWarm;
+          ctx.fillRect(wx, wy, 6, 8);
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawForeground() {
+  // Plano de primer plano (cables + farolillos) con parallax rapido.
+  const par = 1.5, step = 320;
+  const camX = camera.x * par;
+  const first = Math.floor(camX / step) - 1;
+  const last = Math.floor((camX + W) / step) + 1;
+  for (let i = first; i <= last; i++) {
+    const bx = i * step - camX + shakeX;
+    const sag = 34;
+    ctx.strokeStyle = PAL.fg;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(bx, -4);
+    ctx.quadraticCurveTo(bx + step / 2, sag, bx + step, -4);
+    ctx.stroke();
+
+    const lx = bx + step / 2, ly = sag + 8;
+    ctx.fillStyle = "rgba(255,91,61,0.35)";
+    ctx.beginPath(); ctx.arc(lx, ly, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = PAL.danger;
+    ctx.beginPath(); ctx.arc(lx, ly, 5, 0, Math.PI * 2); ctx.fill();
   }
 }
 
 function drawPlatforms() {
   for (const p of platforms) {
-    ctx.fillStyle = "#2b1d4d";
+    // Contorno grueso (estilo arcade) + cuerpo + borde iluminado
+    ctx.fillStyle = PAL.outline;
+    ctx.fillRect(p.x - 2, p.y - 2, p.w + 4, p.h + 4);
+    ctx.fillStyle = PAL.ground;
     ctx.fillRect(p.x, p.y, p.w, p.h);
-    ctx.fillStyle = "#7d5bd6";
+    ctx.fillStyle = PAL.groundTop;
     ctx.fillRect(p.x, p.y, p.w, 4);
   }
 }
 
 function drawGoal() {
+  ctx.fillStyle = PAL.outline;
+  ctx.fillRect(goal.x + goal.w / 2 - 5, goal.y, 10, goal.h);
   ctx.fillStyle = "#3a2a5a";
   ctx.fillRect(goal.x + goal.w / 2 - 3, goal.y, 6, goal.h);
-  ctx.fillStyle = "#ff3b6b";
+  ctx.fillStyle = PAL.accent;
   ctx.beginPath();
   ctx.moveTo(goal.x + goal.w / 2, goal.y + 6);
-  ctx.lineTo(goal.x + goal.w / 2 + 34, goal.y + 20);
+  ctx.lineTo(goal.x + goal.w / 2 + 38, goal.y + 20);
   ctx.lineTo(goal.x + goal.w / 2, goal.y + 34);
   ctx.closePath();
   ctx.fill();
@@ -1446,6 +1536,7 @@ function render() {
 
   ctx.restore();
 
+  drawForeground();
   drawHUD();
 
   if (state === "menu") {
