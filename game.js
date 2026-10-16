@@ -1345,67 +1345,108 @@ function drawPlayer() {
   ctx.scale(1 + sq * 0.18, 1 - sq * 0.32);
   ctx.translate(-(p.x + p.w / 2), -(p.y + p.h));
 
-  const bodyH = p.h - 12;
-  const bodyY = p.y + 12;
+  const bodyH = p.h - 10;
+  const bodyY = p.y + 10;
 
   // Paño/estela por detras (antes del cuerpo)
   if (p.scarf.length > 1) {
     ctx.strokeStyle = "#ff3b6b";
     ctx.lineCap = "round";
     for (let i = 1; i < p.scarf.length; i++) {
-      ctx.lineWidth = Math.max(1, 7 - i);
+      ctx.lineWidth = Math.max(1, 6 - i);
       ctx.beginPath();
-      ctx.moveTo(p.scarf[i - 1].x + p.w / 2, p.scarf[i - 1].y);
-      ctx.lineTo(p.scarf[i].x + p.w / 2, p.scarf[i].y);
+      ctx.moveTo(p.scarf[i - 1].x + p.w / 2, p.scarf[i - 1].y + 2);
+      ctx.lineTo(p.scarf[i].x + p.w / 2, p.scarf[i].y + 2);
       ctx.stroke();
     }
   }
 
-  // Piernas (ciclo de caminata)
-  const legSwing = p.onGround && Math.abs(p.vx) > 30 ? Math.sin(p.runPhase) * 6 : 0;
+  // Piernas (ciclo de caminata) - estilo Metal Slug (chunky)
+  const legSwing = p.onGround && Math.abs(p.vx) > 30 ? Math.sin(p.runPhase) * 5 : 0;
+  const legH = 16;
+  // Pierna trasera/delante segun swing
   ctx.fillStyle = "#0d0818";
-  ctx.fillRect(p.x + 6 + legSwing, p.y + p.h - 14, 8, 14);
-  ctx.fillRect(p.x + p.w - 14 - legSwing, p.y + p.h - 14, 8, 14);
+  ctx.fillRect(p.x + 6 - legSwing * 0.2, p.y + p.h - legH, 8, legH);
+  ctx.fillRect(p.x + p.w - 14 + legSwing * 0.2, p.y + p.h - legH, 8, legH);
+  ctx.fillStyle = "#1a142b";
+  ctx.fillRect(p.x + 7, p.y + p.h - 3, 6, 3);
+  ctx.fillRect(p.x + p.w - 13, p.y + p.h - 3, 6, 3);
 
-  // Cuerpo
-  ctx.fillStyle = "#0d0818";
-  ctx.fillRect(p.x, bodyY, p.w, bodyH);
+  // Cuerpo (tronco) - mas macizo
+  ctx.fillStyle = "#120a20";
+  ctx.fillRect(p.x, bodyY, p.w, bodyH - 2);
+  ctx.fillStyle = "#7d5bd6";
+  ctx.fillRect(p.x, bodyY, p.w, 3); // borde superior iluminado
+  // Hombros
+  ctx.fillStyle = "#120a20";
+  ctx.fillRect(p.x - 2, bodyY + 4, p.w + 4, 6);
+  ctx.fillStyle = "#7d5bd6";
+  ctx.fillRect(p.x - 2, bodyY + 4, p.w + 4, 2);
 
-  // Cabeza
+  // Cabeza/helmet (mas redondeado, tipo soldado)
   ctx.beginPath();
-  ctx.arc(p.x + p.w / 2, p.y + 10, 11, 0, Math.PI * 2);
+  ctx.arc(p.x + p.w / 2, p.y + 10, 12, Math.PI * 0.1, Math.PI * 0.9);
+  ctx.arc(p.x + p.w / 2, p.y + 6, 10, Math.PI * 1.1, Math.PI * 1.9, true);
+  ctx.closePath();
+  ctx.fillStyle = "#0d0818";
   ctx.fill();
+  ctx.fillStyle = "#7d5bd6";
+  ctx.fillRect(p.x + p.w / 2 - 5, p.y + 2, 10, 3);
 
-  // Luz de contorno (rim light)
-  ctx.strokeStyle = "rgba(160,120,255,0.5)";
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(p.x + 0.5, bodyY + 0.5, p.w - 1, bodyH - 1);
+  // Visor
+  const visX = p.x + p.w / 2 + (p.facing > 0 ? 5 : -9);
+  ctx.fillStyle = "#ff3b6b";
+  ctx.fillRect(visX, p.y + 6, 6, 4);
+  ctx.fillStyle = "rgba(255,180,200,0.6)";
+  ctx.fillRect(visX, p.y + 6, 2, 2);
 
-  // Bufanda roja segun direccion
+  // Brazo (arma) - adelante segun direccion
+  const armX = p.x + p.w / 2 + (p.facing > 0 ? 6 : -12);
+  ctx.fillStyle = "#0d0818";
+  ctx.fillRect(armX, p.y + 16, 14, 6);
+  // Cañon/arma
+  ctx.fillStyle = "#1a142b";
+  ctx.fillRect(armX + (p.facing > 0 ? 8 : -8), p.y + 14, 16, 4);
+  ctx.fillStyle = "#7d5bd6";
+  ctx.fillRect(armX + (p.facing > 0 ? 8 : -8), p.y + 14, 16, 2);
+
+  // Bufanda roja
   ctx.fillStyle = "#ff3b6b";
   ctx.fillRect(p.x + (p.facing > 0 ? p.w - 6 : 0), p.y + 16, 6, 14);
   ctx.fillRect(p.x + (p.facing > 0 ? p.w - 12 : 0), p.y + 16, 12, 5);
 
   // Escudo activo
   if (p.shield > 0) {
-    ctx.strokeStyle = "rgba(120,200,255,0.8)";
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(120,200,255,0.9)";
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.arc(p.x + p.w / 2, p.y + p.h / 2, 26, 0, Math.PI * 2);
+    ctx.arc(p.x + p.w / 2, p.y + p.h / 2, 28, 0, Math.PI * 2);
     ctx.stroke();
   }
 
-  // Arco del ataque
+  // Arco del ataque + muzzle flash
   if (p.attackTime > 0) {
     const prog = 1 - p.attackTime / ATTACK_TIME;
     ctx.save();
     ctx.translate(p.x + p.w / 2, p.y + p.h / 2);
     ctx.scale(p.facing, 1);
-    ctx.strokeStyle = "rgba(255,224,130,0.92)";
+    ctx.strokeStyle = "rgba(255,224,130,0.96)";
     ctx.lineWidth = 5;
     ctx.beginPath();
     ctx.arc(0, 0, ATTACK_RANGE * 0.9, -0.9 + prog * 1.5, 0.3 + prog * 1.5);
     ctx.stroke();
+    // Muzzle flash corto
+    const flash = p.attackTime > ATTACK_TIME - 0.05;
+    if (flash) {
+      ctx.fillStyle = "#ffe082";
+      ctx.beginPath();
+      ctx.arc(18, -2, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#ff8a3d";
+      ctx.beginPath();
+      ctx.arc(18, -2, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.restore();
   }
 
