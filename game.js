@@ -1187,56 +1187,64 @@ function drawEnemy(e) {
   const hit = e.flash > 0; // destello blanco al recibir dano
 
   if (e.type === "walker" || e.type === "hopper") {
-    const legSwing = Math.abs(Math.sin(e.t * 8 + e.x * 0.01)) * 4;
-    ctx.fillStyle = hit ? "#ffffff" : "#120a20";
+    const legSwing = Math.abs(Math.sin(e.t * 8 + e.x * 0.01)) * 6;
+    ctx.fillStyle = hit ? "#ffffff" : "#0f0818";
     ctx.fillRect(e.x, e.y, e.w, e.h - 2);
-    ctx.fillStyle = hit ? "#ffffff" : "#7d5bd6";
-    ctx.fillRect(e.x, e.y, e.w, 3);
+    ctx.fillStyle = hit ? "#ffffff" : "#ff5b3d";
+    ctx.fillRect(e.x, e.y, e.w, 4);
     ctx.fillStyle = "#0d0818";
-    ctx.fillRect(e.x + 4 + legSwing, e.y + e.h - 8, 6, 8);
-    ctx.fillRect(e.x + e.w - 10 - legSwing, e.y + e.h - 8, 6, 8);
+    ctx.fillRect(e.x + 4 + legSwing, e.y + e.h - 10, 8, 10);
+    ctx.fillRect(e.x + e.w - 12 - legSwing, e.y + e.h - 10, 8, 10);
+    ctx.fillStyle = "#1a142b";
+    ctx.fillRect(e.x + 4 + legSwing, e.y + e.h - 10, 8, 3);
+    ctx.fillRect(e.x + e.w - 12 - legSwing, e.y + e.h - 10, 8, 3);
     ctx.fillStyle = "#ff3b6b";
-    const eyeX = e.dir > 0 ? e.x + e.w - 12 : e.x + 6;
-    ctx.fillRect(eyeX, e.y + 12, 6, 5);
-    ctx.fillStyle = "rgba(255,180,200,0.6)";
-    ctx.fillRect(eyeX, e.y + 12, 2, 2);
+    const eyeX = e.dir > 0 ? e.x + e.w - 14 : e.x + 4;
+    ctx.fillRect(eyeX, e.y + 12, 8, 5);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(eyeX + (e.dir > 0 ? 4 : 2), e.y + 12, 2, 2);
     if (e.type === "hopper") {
       ctx.fillStyle = "#0d0818";
-      ctx.fillRect(e.x + 4, e.y + e.h - 3, 8, 3);
-      ctx.fillRect(e.x + e.w - 12, e.y + e.h - 3, 8, 3);
+      ctx.fillRect(e.x + 4, e.y + e.h - 3, 10, 3);
+      ctx.fillRect(e.x + e.w - 14, e.y + e.h - 3, 10, 3);
     }
 
   } else if (e.type === "flyer") {
     ctx.fillStyle = hit ? "#ffffff" : "#150c26";
-    // cuerpo
+    // fuselaje
     ctx.beginPath();
-    ctx.ellipse(e.x + e.w / 2, e.y + e.h / 2, e.w / 2, e.h / 2, 0, 0, Math.PI * 2);
+    ctx.ellipse(e.x + e.w / 2, e.y + e.h / 2 + 2, e.w / 2, e.h * 0.6, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = hit ? "#ffffff" : "#7d5bd6";
+    ctx.fillStyle = hit ? "#ffffff" : "#ff5b3d";
     ctx.beginPath();
-    ctx.ellipse(e.x + e.w / 2, e.y + e.h / 2 - 6, e.w * 0.4, e.h * 0.4, 0, 0, Math.PI * 2);
+    ctx.ellipse(e.x + e.w / 2, e.y + e.h / 2 - 6, e.w * 0.45, e.h * 0.45, 0, 0, Math.PI * 2);
     ctx.fill();
-    // alas (baten) Metal Slug-like
-    const flap = Math.sin(e.t * 16) * 10;
+    // alas (baten)
+    const flap = Math.sin(e.t * 16) * 14;
     ctx.fillStyle = hit ? "#ffffff" : "#2a1a45";
     ctx.beginPath();
-    ctx.moveTo(e.x + e.w / 2, e.y + e.h / 2);
-    ctx.lineTo(e.x - 10, e.y + e.h / 2 - 8 + flap);
-    ctx.lineTo(e.x + 4, e.y + e.h / 2 + 4);
+    ctx.moveTo(e.x + e.w / 2, e.y + e.h / 2 + 2);
+    ctx.lineTo(e.x - 14, e.y + e.h / 2 - 10 + flap);
+    ctx.lineTo(e.x + 6, e.y + e.h / 2 + 8);
     ctx.closePath();
     ctx.fill();
     ctx.beginPath();
-    ctx.moveTo(e.x + e.w / 2, e.y + e.h / 2);
-    ctx.lineTo(e.x + e.w + 10, e.y + e.h / 2 - 8 - flap);
-    ctx.lineTo(e.x + e.w - 4, e.y + e.h / 2 + 4);
+    ctx.moveTo(e.x + e.w / 2, e.y + e.h / 2 + 2);
+    ctx.lineTo(e.x + e.w + 14, e.y + e.h / 2 - 10 - flap);
+    ctx.lineTo(e.x + e.w - 6, e.y + e.h / 2 + 8);
     ctx.closePath();
     ctx.fill();
+    // Canones
+    ctx.fillStyle = hit ? "#ffffff" : "#0d0818";
+    ctx.fillRect(e.x + e.w / 2 - 12, e.y + e.h / 2 + 8, 6, 8);
+    ctx.fillRect(e.x + e.w / 2 + 6, e.y + e.h / 2 + 8, 6, 8);
+    // Ojos
     ctx.fillStyle = "#ff3b6b";
-    ctx.fillRect(e.x + e.w / 2 - 5, e.y + e.h / 2 - 2, 4, 4);
-    ctx.fillRect(e.x + e.w / 2 + 1, e.y + e.h / 2 - 2, 4, 4);
-    ctx.fillStyle = "rgba(255,180,200,0.6)";
-    ctx.fillRect(e.x + e.w / 2 - 4, e.y + e.h / 2 - 2, 2, 2);
-    ctx.fillRect(e.x + e.w / 2 + 2, e.y + e.h / 2 - 2, 2, 2);
+    ctx.fillRect(e.x + e.w / 2 - 6, e.y + e.h / 2 - 4, 5, 5);
+    ctx.fillRect(e.x + e.w / 2 + 1, e.y + e.h / 2 - 4, 5, 5);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(e.x + e.w / 2 - 4, e.y + e.h / 2 - 4, 2, 2);
+    ctx.fillRect(e.x + e.w / 2 + 3, e.y + e.h / 2 - 4, 2, 2);
 
   } else if (e.type === "turret") {
     ctx.fillStyle = hit ? "#ffffff" : "#1a1030";
@@ -1388,59 +1396,69 @@ function drawPlayer() {
     }
   }
 
-  // Piernas (ciclo de caminata) - estilo Metal Slug (chunky)
-  const legSwing = p.onGround && Math.abs(p.vx) > 30 ? Math.sin(p.runPhase) * 5 : 0;
-  const legH = 16;
-  // Pierna trasera/delante segun swing
+  // Piernas - estilo Metal Slug (chunky, con rodillas)
+  const legSwing = p.onGround && Math.abs(p.vx) > 30 ? Math.sin(p.runPhase) * 8 : 0;
+  const legH = 20;
   ctx.fillStyle = "#0d0818";
-  ctx.fillRect(p.x + 6 - legSwing * 0.2, p.y + p.h - legH, 8, legH);
-  ctx.fillRect(p.x + p.w - 14 + legSwing * 0.2, p.y + p.h - legH, 8, legH);
+  ctx.fillRect(p.x + 8 - legSwing * 0.25, p.y + p.h - legH, 10, legH);
+  ctx.fillRect(p.x + p.w - 18 + legSwing * 0.25, p.y + p.h - legH, 10, legH);
   ctx.fillStyle = "#1a142b";
-  ctx.fillRect(p.x + 7, p.y + p.h - 3, 6, 3);
-  ctx.fillRect(p.x + p.w - 13, p.y + p.h - 3, 6, 3);
+  ctx.fillRect(p.x + 8 - legSwing * 0.25 + 1, p.y + p.h - legH, 8, 6);
+  ctx.fillRect(p.x + p.w - 18 + legSwing * 0.25 + 1, p.y + p.h - legH, 8, 6);
+  ctx.fillStyle = "#0d0818";
+  ctx.fillRect(p.x + 9, p.y + p.h - 4, 8, 4);
+  ctx.fillRect(p.x + p.w - 17, p.y + p.h - 4, 8, 4);
 
-  // Cuerpo (tronco) - mas macizo
+  // Cuerpo (tronco) - macizo con armadura
   ctx.fillStyle = "#120a20";
-  ctx.fillRect(p.x, bodyY, p.w, bodyH - 2);
+  ctx.fillRect(p.x + 2, bodyY, p.w - 4, bodyH - 4);
   ctx.fillStyle = "#7d5bd6";
-  ctx.fillRect(p.x, bodyY, p.w, 3); // borde superior iluminado
+  ctx.fillRect(p.x + 2, bodyY, p.w - 4, 4); // barra superior
   // Hombros
   ctx.fillStyle = "#120a20";
-  ctx.fillRect(p.x - 2, bodyY + 4, p.w + 4, 6);
+  ctx.fillRect(p.x - 3, bodyY + 5, p.w + 6, 9);
+  ctx.fillStyle = "#ff3b6b";
+  ctx.fillRect(p.x - 3, bodyY + 5, p.w + 6, 3);
   ctx.fillStyle = "#7d5bd6";
-  ctx.fillRect(p.x - 2, bodyY + 4, p.w + 4, 2);
+  ctx.fillRect(p.x - 3, bodyY + 8, p.w + 6, 2);
 
-  // Cabeza/helmet (mas redondeado, tipo soldado)
+  // Cabello/casco - mucho mas marcado
   ctx.beginPath();
-  ctx.arc(p.x + p.w / 2, p.y + 10, 12, Math.PI * 0.1, Math.PI * 0.9);
-  ctx.arc(p.x + p.w / 2, p.y + 6, 10, Math.PI * 1.1, Math.PI * 1.9, true);
+  ctx.arc(p.x + p.w / 2, p.y + 8, 14, Math.PI * 0.05, Math.PI * 0.95);
+  ctx.arc(p.x + p.w / 2, p.y + 3, 12, Math.PI * 1.05, Math.PI * 1.95, true);
   ctx.closePath();
   ctx.fillStyle = "#0d0818";
   ctx.fill();
-  ctx.fillStyle = "#7d5bd6";
-  ctx.fillRect(p.x + p.w / 2 - 5, p.y + 2, 10, 3);
-
-  // Visor
-  const visX = p.x + p.w / 2 + (p.facing > 0 ? 5 : -9);
+  // Cresta
   ctx.fillStyle = "#ff3b6b";
-  ctx.fillRect(visX, p.y + 6, 6, 4);
-  ctx.fillStyle = "rgba(255,180,200,0.6)";
-  ctx.fillRect(visX, p.y + 6, 2, 2);
+  ctx.fillRect(p.x + p.w / 2 - 3, p.y - 1, 6, 5);
+  // Protector frontal
+  ctx.fillStyle = "#7d5bd6";
+  ctx.fillRect(p.x + p.w / 2 - 6, p.y + 1, 12, 4);
 
-  // Brazo (arma) - adelante segun direccion
-  const armX = p.x + p.w / 2 + (p.facing > 0 ? 6 : -12);
+  // Visor - ancho
+  const visX = p.x + p.w / 2 + (p.facing > 0 ? 7 : -13);
+  ctx.fillStyle = "#ff3b6b";
+  ctx.fillRect(visX, p.y + 5, 8, 5);
+  ctx.fillStyle = "rgba(255,220,230,0.8)";
+  ctx.fillRect(visX, p.y + 5, 2, 3);
+
+  // Brazo (arma) - mas prominente
+  const armX = p.x + p.w / 2 + (p.facing > 0 ? 9 : -16);
   ctx.fillStyle = "#0d0818";
-  ctx.fillRect(armX, p.y + 16, 14, 6);
-  // Cañon/arma
+  ctx.fillRect(armX, p.y + 16, 16, 8);
   ctx.fillStyle = "#1a142b";
-  ctx.fillRect(armX + (p.facing > 0 ? 8 : -8), p.y + 14, 16, 4);
+  ctx.fillRect(armX, p.y + 16, 16, 2);
+  // Cañon largo
+  ctx.fillStyle = "#1a142b";
+  ctx.fillRect(armX + (p.facing > 0 ? 10 : -10), p.y + 14, 22, 6);
   ctx.fillStyle = "#7d5bd6";
-  ctx.fillRect(armX + (p.facing > 0 ? 8 : -8), p.y + 14, 16, 2);
+  ctx.fillRect(armX + (p.facing > 0 ? 10 : -10), p.y + 14, 22, 3);
 
-  // Bufanda roja
+  // Bufanda roja mas larga
   ctx.fillStyle = "#ff3b6b";
-  ctx.fillRect(p.x + (p.facing > 0 ? p.w - 6 : 0), p.y + 16, 6, 14);
-  ctx.fillRect(p.x + (p.facing > 0 ? p.w - 12 : 0), p.y + 16, 12, 5);
+  ctx.fillRect(p.x + (p.facing > 0 ? p.w - 6 : 0), p.y + 16, 6, 24);
+  ctx.fillRect(p.x + (p.facing > 0 ? p.w - 14 : 0), p.y + 16, 14, 6);
 
   // Escudo activo
   if (p.shield > 0) {
