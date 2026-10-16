@@ -926,11 +926,13 @@ function drawBackground() {
     skyTop = "#1a0f30"; skyMid = "#3a1a4a"; skyLow = "#7a2f57"; glow = "#ff8a3d"; glowAlpha = 0.45;
     far = "#3d2a5c"; mid = "#2a1a45"; near = "#1a0f30";
   } else if (lv === 1) {
-    skyTop = "#160c2c"; skyMid = "#2a1445"; skyLow = "#5a1e70"; glow = "#b63bc9"; glowAlpha = 0.4;
-    far = "#34215a"; mid = "#25133c"; near = "#1a0f30";
+    // Nivel 1: DESIERTO (calido/arenoso, contraste)
+    skyTop = "#f0c94a"; skyMid = "#f29a3e"; skyLow = "#f06a2a"; glow = "#ffb84d"; glowAlpha = 0.5;
+    far = "#f2d98a"; mid = "#e6b86e"; near = "#d89a56";
   } else if (lv === 2) {
-    skyTop = "#0c081f"; skyMid = "#1a102c"; skyLow = "#5a1a40"; glow = "#ff5b3d"; glowAlpha = 0.55;
-    far = "#2a1a3c"; mid = "#1a142c"; near = "#0e0a1c";
+    // Nivel 2: INDUSTRIAL/NOCTURNO METAL SLUG (mas frio, mas duro)
+    skyTop = "#0f172a"; skyMid = "#1f2f3f"; skyLow = "#2f4f4f"; glow = "#ff5b3d"; glowAlpha = 0.6;
+    far = "#1a2438"; mid = "#16202f"; near = "#111824";
   }
 
   const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
@@ -985,14 +987,13 @@ function drawSkyline(parallax, baseY, color, height, step, winAlpha, skyLow) {
     ctx.fillStyle = color;
     ctx.fillRect(bx, baseY - h, step - 6, h + 220);
 
-    // Ventanas encendidas: ritmo lento por tiempo para evitar estroboscopio
-    const pulse = Math.sin((bx * 0.08 + gameTime * 0.25) * 0.7) * 0.5 + 0.5;
-    ctx.globalAlpha = winAlpha * 0.6;
+    // Ventanas encendidas: estaticas (sin pulso) para evitar estroboscopio
+    ctx.globalAlpha = winAlpha * 0.7;
     for (let wy = baseY - h + 14; wy < baseY - 6; wy += 16) {
       for (let wx = bx + 6; wx < bx + step - 12; wx += 16) {
         const seed = (Math.sin(wx * 1.7 + wy * 1.3) * 43758.5453) % 1;
-        if (seed > 0.6 && pulse > 0.55) {
-          ctx.fillStyle = seed > 0.8 ? PAL.winPink : PAL.winWarm;
+        if (seed > 0.65) {
+          ctx.fillStyle = seed > 0.82 ? PAL.winPink : PAL.winWarm;
           ctx.fillRect(wx, wy, 6, 8);
         }
       }
