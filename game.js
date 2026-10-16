@@ -101,6 +101,21 @@ window.addEventListener("keydown", (e) => {
       shopMsg = "";
     } else if (e.code === "Enter" || e.code === "Space") {
       buyItem(shopIndex);
+    } else if (e.code === "KeyQ") {
+      // Alternar arma equipada si se tienen ambas
+      if (lvl("rifle") > 0 && lvl("pistol") > 0) {
+        upgrades.equippedWeapon = (getEquippedWeapon() === "rifle") ? "pistol" : "rifle";
+        save();
+        shopMsg = "Arma equipada: " + upgrades.equippedWeapon;
+      } else if (lvl("rifle") > 0) {
+        upgrades.equippedWeapon = "rifle";
+        save();
+        shopMsg = "Arma equipada: rifle";
+      } else if (lvl("pistol") > 0) {
+        upgrades.equippedWeapon = "pistol";
+        save();
+        shopMsg = "Arma equipada: pistola";
+      }
     } else if (e.code === "KeyK" || e.code === "Escape") {
       state = "playing";
     }
@@ -1720,9 +1735,14 @@ function drawShop() {
   ctx.fillStyle = "#5be08a";
   ctx.font = "bold 15px Segoe UI, Arial";
   if (shopMsg) ctx.fillText(shopMsg, W / 2, py + ph - 40);
+  let armaEq = upgrades.equippedWeapon || getEquippedWeapon();
   ctx.fillStyle = "#a89ec8";
   ctx.font = "13px Segoe UI, Arial";
-  ctx.fillText("Arriba/Abajo: elegir   ·   ENTER: comprar   ·   K/ESC: salir", W / 2, py + ph - 18);
+  if (lvl("rifle") > 0 && lvl("pistol") > 0) {
+    ctx.fillText("Arriba/Abajo: elegir   ·   ENTER: comprar   ·   Q: cambiar arma (" + armaEq + ")   ·   K/ESC: salir", W / 2, py + ph - 18);
+  } else {
+    ctx.fillText("Arriba/Abajo: elegir   ·   ENTER: comprar   ·   K/ESC: salir", W / 2, py + ph - 18);
+  }
   ctx.textAlign = "left";
 }
 
