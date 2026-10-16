@@ -1014,15 +1014,15 @@ function drawSkyline(parallax, baseY, color, height, step, winAlpha, skyLow) {
     ctx.fillStyle = color;
     ctx.fillRect(bx, baseY - h, step - 6, h + 220);
 
-    // Ventanas estaticas (sin ninguna dependencia de posicion/tiempo para evitar parpadeo)
+    // Ventanas estaticas: semilla basada en coordenadas de MUNDO (wx - offset),
+    // asi no cambian al mover la camara ni con el screen shake -> no parpadean.
     ctx.globalAlpha = winAlpha * 0.6;
     for (let wy = baseY - h + 14; wy < baseY - 6; wy += 16) {
       for (let wx = bx + 6; wx < bx + step - 12; wx += 16) {
-        // Semilla deterministica fija por tile para evitar que parpadee al moverse la camara
-        const seed = ((Math.floor(wx / 16) * 131542391) ^ (Math.floor(wy / 16) * 1000000009)) % 0x10000;
-        if ((seed / 0x10000) > 0.7) {
-          const cseed = (seed >> 4) % 0x10000;
-          ctx.fillStyle = (cseed / 0x10000) > 0.5 ? PAL.winPink : PAL.winWarm;
+        const worldX = wx - offset;          // posicion fija en el mundo, no en pantalla
+        const seed = ((Math.floor(worldX / 16) * 73856093) ^ (Math.floor(wy / 16) * 19349663)) >>> 0;
+        if ((seed % 100) / 100 > 0.7) {
+          ctx.fillStyle = ((seed >> 3) % 2) ? PAL.winPink : PAL.winWarm;
           ctx.fillRect(wx, wy, 6, 8);
         }
       }
