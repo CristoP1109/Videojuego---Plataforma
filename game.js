@@ -253,6 +253,7 @@ const player = {
   x: 60, y: 0, w: 34, h: 48,
   vx: 0, vy: 0,
   onGround: false, coyote: 0, jumpBuffer: 0,
+  jumpPrev: false,     // estado del salto en el frame anterior (para detectar pulsacion)
   jumps: 0,            // saltos usados en el aire
   facing: 1,
   hp: 3, maxHp: 3,
@@ -367,6 +368,7 @@ function reset() {
   player.jumps = 0;
   player.coyote = 0;
   player.jumpBuffer = 0;
+  player.jumpPrev = false;
   player.dashTime = 0;
   player.dashCd = 0;
   player.attackTime = 0;
@@ -458,8 +460,11 @@ function updatePlayer(dt) {
     }
 
     // --- Salto (con doble salto opcional) ---
-    if (jump()) p.jumpBuffer = BUFFER;
+    // El buffer solo se recarga al PULSAR (flanco), no mientras se mantiene
+    const jumpDown = jump();
+    if (jumpDown && !p.jumpPrev) p.jumpBuffer = BUFFER;
     else p.jumpBuffer = Math.max(0, p.jumpBuffer - dt);
+    p.jumpPrev = jumpDown;
     p.coyote = p.onGround ? COYOTE : Math.max(0, p.coyote - dt);
 
     if (p.onGround) p.jumps = 0;
@@ -471,7 +476,7 @@ function updatePlayer(dt) {
       p.coyote = 0;
       p.onGround = false;
       p.dashTime = 0;
-      p.landSquash = -0.5;
+      p.landSquash = -1;
       spawnDust(p.x + p.w / 2, p.y + p.h, 4);
     }
 
@@ -506,7 +511,7 @@ function updatePlayer(dt) {
   }
 
   // Aterrizaje: efecto squash + polvo + temblor
-  if (!wasAir && p.onGround && fallSpeed > 420) {
+  if (wasAir && p.onGround && fallSpeed > 420) {
     p.landSquash = 1;
     spawnDust(p.x + p.w / 2, p.y + p.h, 8);
     addShake(0.12);
@@ -1123,10 +1128,16 @@ function drawPlayer() {
   ctx.ellipse(p.x + p.w / 2, p.y + p.h + 3, p.w * 0.6, 5, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Squash al aterrizar
-  const sq = p.landSquash;
-  const bodyH = (p.h - 12) * (1 - sq * 0.25);
-  const bodyY = p.y + 12 + (p.h - 12) - bodyH;
+  // Squash & stretch: escala el cuerpo completo anclado a los pies.
+  // sq>0 aplasta (ancho y bajo); sq<0 estira (estrecho y alto).
+  const sq = clamp(p.landSquash, -1, 1);
+  ctx.save();
+  ctx.translate(p.x + p.w / 2, p.y + p.h);
+  ctx.scale(1 + sq * 0.18, 1 - sq * 0.32);
+  ctx.translate(-(p.x + p.w / 2), -(p.y + p.h));
+
+  const bodyH = p.h - 12;
+  const bodyY = p.y + 12;
 
   // Paño/estela por detras (antes del cuerpo)
   if (p.scarf.length > 1) {
@@ -1188,6 +1199,8 @@ function drawPlayer() {
     ctx.stroke();
     ctx.restore();
   }
+
+  ctx.restore();
 }
 
 function drawFloaters() {
