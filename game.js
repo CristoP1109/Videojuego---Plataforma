@@ -377,6 +377,7 @@ let camera = { x: 0 };
 let shake = 0;                 // 0..1 "trauma" acumulado
 let shakeX = 0, shakeY = 0;    // offset actual aplicado al mundo
 let hitstop = 0;               // congelacion breve en impactos (segundos)
+let gameTime = 0;             // tiempo acumulado (para animaciones lentas)
 let score = 0;
 let state = "menu"; // menu | playing | dead | win | shop
 
@@ -410,6 +411,7 @@ function reset() {
   shakeX = 0;
   shakeY = 0;
   hitstop = 0;
+  gameTime = 0;
   score = 0;
   runCoins = 0;
 
@@ -914,28 +916,44 @@ function updateCamera(dt) {
 
 // ----- 10. DIBUJO -----
 function drawBackground() {
-  // Cielo crepusculo: frio arriba, calido en el horizonte
-  const sky = ctx.createLinearGradient(0, 0, 0, H);
-  sky.addColorStop(0, PAL.skyTop);
-  sky.addColorStop(0.55, PAL.skyMid);
-  sky.addColorStop(0.82, PAL.skyLow);
-  sky.addColorStop(1, PAL.glow);
-  ctx.fillStyle = sky;
+  const lv = currentLevel || 0;
+
+  // Cielo diferente por bioma segun nivel
+  let skyTop = PAL.skyTop, skyMid = PAL.skyMid, skyLow = PAL.skyLow, glow = PAL.glow;
+  let glowAlpha = 0.5;
+  let far = PAL.far, mid = PAL.mid, near = PAL.near;
+  if (lv === 0) {
+    skyTop = "#1a0f30"; skyMid = "#3a1a4a"; skyLow = "#7a2f57"; glow = "#ff8a3d"; glowAlpha = 0.45;
+    far = "#3d2a5c"; mid = "#2a1a45"; near = "#1a0f30";
+  } else if (lv === 1) {
+    skyTop = "#160c2c"; skyMid = "#2a1445"; skyLow = "#5a1e70"; glow = "#b63bc9"; glowAlpha = 0.4;
+    far = "#34215a"; mid = "#25133c"; near = "#1a0f30";
+  } else if (lv === 2) {
+    skyTop = "#0c081f"; skyMid = "#1a102c"; skyLow = "#5a1a40"; glow = "#ff5b3d"; glowAlpha = 0.55;
+    far = "#2a1a3c"; mid = "#1a142c"; near = "#0e0a1c";
+  }
+
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+  skyGrad.addColorStop(0, skyTop);
+  skyGrad.addColorStop(0.55, skyMid);
+  skyGrad.addColorStop(0.82, skyLow);
+  skyGrad.addColorStop(1, glow);
+  ctx.fillStyle = skyGrad;
   ctx.fillRect(0, 0, W, H);
 
   // Resplandor calido del horizonte
-  const glow = ctx.createRadialGradient(W * 0.62, H + 60, 10, W * 0.62, H + 60, H * 1.15);
-  glow.addColorStop(0, "rgba(255,160,74,0.5)");
-  glow.addColorStop(1, "rgba(255,160,74,0)");
-  ctx.fillStyle = glow;
+  const glowGrad = ctx.createRadialGradient(W * 0.62, H + 60, 10, W * 0.62, H + 60, H * 1.15);
+  glowGrad.addColorStop(0, "rgba(255,160,74," + glowAlpha + ")");
+  glowGrad.addColorStop(1, "rgba(255,160,74,0)");
+  ctx.fillStyle = glowGrad;
   ctx.fillRect(0, 0, W, H);
 
   drawMoon();
 
   // Ciudad en 3 capas (perspectiva atmosferica: lejos=claro, cerca=oscuro)
-  drawSkyline(0.12, 320, PAL.far, 150, 30, 0.4);
-  drawSkyline(0.30, 380, PAL.mid, 130, 46, 0.7);
-  drawSkyline(0.55, 430, PAL.near, 150, 72, 1.0);
+  drawSkyline(0.12, 320, far, 150, 30, 0.25, skyLow);
+  drawSkyline(0.30, 380, mid, 130, 46, 0.5, skyLow);
+  drawSkyline(0.55, 430, near, 150, 72, 0.9, skyLow);
 }
 
 function drawMoon() {
@@ -956,7 +974,7 @@ function drawMoon() {
   ctx.beginPath(); ctx.arc(mx + 9, my + 9, 9, 0, Math.PI * 2); ctx.fill();
 }
 
-function drawSkyline(parallax, baseY, color, height, step, winAlpha) {
+function drawSkyline(parallax, baseY, color, height, step, winAlpha, skyLow) {
   const offset = -camera.x * parallax + shakeX * parallax;
   const start = Math.floor(-offset / step) * step - step;
   for (let x = start; x < LEVEL_W + step; x += step) {
@@ -967,13 +985,14 @@ function drawSkyline(parallax, baseY, color, height, step, winAlpha) {
     ctx.fillStyle = color;
     ctx.fillRect(bx, baseY - h, step - 6, h + 220);
 
-    // Ventanas encendidas: mezcla de calido y neon
-    ctx.globalAlpha = winAlpha;
+    // Ventanas encendidas: ritmo lento por tiempo para evitar estroboscopio
+    const pulse = Math.sin((bx * 0.08 + gameTime * 0.25) * 0.7) * 0.5 + 0.5;
+    ctx.globalAlpha = winAlpha * 0.6;
     for (let wy = baseY - h + 14; wy < baseY - 6; wy += 16) {
       for (let wx = bx + 6; wx < bx + step - 12; wx += 16) {
-        const on = (Math.sin(wx * 3.1 + wy * 1.7) * 43758.5453) % 1;
-        if (on > 0.42) {
-          ctx.fillStyle = on > 0.72 ? PAL.winPink : PAL.winWarm;
+        const seed = (Math.sin(wx * 1.7 + wy * 1.3) * 43758.5453) % 1;
+        if (seed > 0.6 && pulse > 0.55) {
+          ctx.fillStyle = seed > 0.8 ? PAL.winPink : PAL.winWarm;
           ctx.fillRect(wx, wy, 6, 8);
         }
       }
@@ -984,6 +1003,7 @@ function drawSkyline(parallax, baseY, color, height, step, winAlpha) {
 
 function drawForeground() {
   // Plano de primer plano (cables + farolillos) con parallax rapido.
+  // Halo para mejorar visibilidad sin añadir ruido
   const par = 1.5, step = 320;
   const camX = camera.x * par;
   const first = Math.floor(camX / step) - 1;
@@ -991,18 +1011,27 @@ function drawForeground() {
   for (let i = first; i <= last; i++) {
     const bx = i * step - camX + shakeX;
     const sag = 34;
+    // Halo detras del cable
+    ctx.strokeStyle = "rgba(0,0,0,0.25)";
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.moveTo(bx, -4);
+    ctx.quadraticCurveTo(bx + step / 2, sag, bx + step, -4);
+    ctx.stroke();
+    // Cable principal
     ctx.strokeStyle = PAL.fg;
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.moveTo(bx, -4);
     ctx.quadraticCurveTo(bx + step / 2, sag, bx + step, -4);
     ctx.stroke();
 
     const lx = bx + step / 2, ly = sag + 8;
-    ctx.fillStyle = "rgba(255,91,61,0.35)";
-    ctx.beginPath(); ctx.arc(lx, ly, 9, 0, Math.PI * 2); ctx.fill();
+    // Halo del farolillo
+    ctx.fillStyle = "rgba(255,91,61,0.55)";
+    ctx.beginPath(); ctx.arc(lx, ly, 12, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = PAL.danger;
-    ctx.beginPath(); ctx.arc(lx, ly, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(lx, ly, 6, 0, Math.PI * 2); ctx.fill();
   }
 }
 
@@ -1562,6 +1591,7 @@ function loop(now) {
     if (hitstop > 0) {
       hitstop -= dt;
     } else {
+      gameTime += dt;
       updatePlayer(dt);
       updateEnemies(dt);
       updateProjectiles(dt);
