@@ -17,11 +17,23 @@ Prototipo de un **plataformas 2D** hecho con **HTML5, JavaScript y Canvas puro**
 - Movimiento con aceleración y fricción
 - **Salto variable**: cuanto más mantengas la tecla, más alto saltas
 - **Coyote time** y **jump buffer** (saltos que perdonan errores humanos)
+- **Dash** con enfriamiento e invulnerabilidad durante el impulso
+- **Ataque cuerpo a cuerpo** con área de golpe y animación
 - Colisiones **AABB** resueltas por ejes
-- Enemigos que patrullan y se pueden **pisar** para eliminarlos
-- 3 corazones de vida, invulnerabilidad breve tras recibir daño
+- Enemigos de 4 tipos: **patrulla**, **volador**, **saltador** y **torreta** que dispara
+- Se puede **pisar** o **golpear** a los enemigos; los que tienen 2 de vida muestran barra
+- **3 niveles de dificultad** seleccionables desde un menú:
+  - **Fácil** — escenario corto y enemigos débiles
+  - **Medio** — enemigos más fuertes y un **minijefe**
+  - **Difícil** — todos los enemigos mejorados y un **jefe final** con abanico de disparos
+- Barra de vida de **jefe/minijefe** en pantalla
+- En el nivel difícil el jefe **bloquea la meta** hasta derrotarlo
+- **Economía persistente** (`localStorage`): las monedas guardadas no se pierden al recargar
+- **Tienda** con 6 mejoras: más vida, velocidad, salto, imán de monedas, chaleco y doble salto
+- **Doble salto**, escudo y bufanda con física simulada
+- Partículas (polvo, chispas, estela), números flotantes y cámara con sacudida
 - Pozos mortales, cámara que sigue al jugador y fondo con **parallax**
-- Pantallas de inicio, derrota y victoria
+- Pantallas de menú, derrota y victoria
 
 ---
 
@@ -29,11 +41,16 @@ Prototipo de un **plataformas 2D** hecho con **HTML5, JavaScript y Canvas puro**
 
 | Acción | Teclas |
 |---|---|
+| Elegir nivel / comprar | `↑` `↓` y `Enter` |
 | Moverse | `←` `→` o `A` / `D` |
-| Saltar | `Espacio` o `W` / `↑` |
-| Reiniciar | `Enter` |
+| Saltar (2 veces = doble salto) | `Espacio` o `W` / `↑` |
+| Dash | `Shift` o `L` |
+| Atacar | `J` o `X` |
+| Abrir la tienda | `K` |
+| Menú de niveles | `M` (al ganar o perder) |
+| Reintentar el nivel | `Enter` (al ganar o perder) |
 
-**Objetivo:** llega a la bandera roja del final sin caer a los pozos y elimina a los enemigos que encuentres.
+**Objetivo:** elige una dificultad, llega a la bandera del final sin caer a los pozos, derrota a los enemigos (y al jefe) y gasta las monedas que recojas en la tienda.
 
 ---
 
@@ -68,10 +85,12 @@ Videojuego---Plataforma/
 
 ## 🚀 Próximos pasos (roadmap)
 
-- [ ] Doble salto
-- [ ] Dash (impulso horizontal)
-- [ ] Monedas y contador de puntos
-- [ ] Más niveles y enemigos con comportamientos distintos
+- [x] Doble salto
+- [x] Dash (impulso horizontal)
+- [x] Monedas, tienda y economía persistente
+- [x] Enemigos con comportamientos distintos
+- [x] 3 niveles de dificultad (fácil / medio / difícil)
+- [x] Minijefe y jefe final
 - [ ] Sistema de "recuerdos" que desbloqueen habilidades (base para un metroidvania de venganza con temática yakuza)
 - [ ] Música y efectos de sonido
 
