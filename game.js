@@ -1396,69 +1396,56 @@ function drawPlayer() {
     }
   }
 
-  // Piernas - estilo Metal Slug (chunky, con rodillas)
-  const legSwing = p.onGround && Math.abs(p.vx) > 30 ? Math.sin(p.runPhase) * 8 : 0;
-  const legH = 20;
+  // Piernas - humanoide, menos chunky
+  const legSwing = p.onGround && Math.abs(p.vx) > 30 ? Math.sin(p.runPhase) * 7 : 0;
+  const legH = 18;
   ctx.fillStyle = "#0d0818";
-  ctx.fillRect(p.x + 8 - legSwing * 0.25, p.y + p.h - legH, 10, legH);
-  ctx.fillRect(p.x + p.w - 18 + legSwing * 0.25, p.y + p.h - legH, 10, legH);
-  ctx.fillStyle = "#1a142b";
-  ctx.fillRect(p.x + 8 - legSwing * 0.25 + 1, p.y + p.h - legH, 8, 6);
-  ctx.fillRect(p.x + p.w - 18 + legSwing * 0.25 + 1, p.y + p.h - legH, 8, 6);
+  ctx.fillRect(p.x + 8 - legSwing * 0.3, p.y + p.h - legH, 8, legH);
+  ctx.fillRect(p.x + p.w - 16 + legSwing * 0.3, p.y + p.h - legH, 8, legH);
   ctx.fillStyle = "#0d0818";
-  ctx.fillRect(p.x + 9, p.y + p.h - 4, 8, 4);
-  ctx.fillRect(p.x + p.w - 17, p.y + p.h - 4, 8, 4);
+  ctx.fillRect(p.x + 9, p.y + p.h - 4, 6, 4);
+  ctx.fillRect(p.x + p.w - 15, p.y + p.h - 4, 6, 4);
 
-  // Cuerpo (tronco) - macizo con armadura
+  // Cuerpo - proporcional
   ctx.fillStyle = "#120a20";
-  ctx.fillRect(p.x + 2, bodyY, p.w - 4, bodyH - 4);
+  ctx.fillRect(p.x + 4, bodyY, p.w - 8, bodyH - 3);
   ctx.fillStyle = "#7d5bd6";
-  ctx.fillRect(p.x + 2, bodyY, p.w - 4, 4); // barra superior
-  // Hombros
-  ctx.fillStyle = "#120a20";
-  ctx.fillRect(p.x - 3, bodyY + 5, p.w + 6, 9);
-  ctx.fillStyle = "#ff3b6b";
-  ctx.fillRect(p.x - 3, bodyY + 5, p.w + 6, 3);
-  ctx.fillStyle = "#7d5bd6";
-  ctx.fillRect(p.x - 3, bodyY + 8, p.w + 6, 2);
+  ctx.fillRect(p.x + 4, bodyY, p.w - 8, 2);
 
-  // Cabello/casco - mucho mas marcado
+  // Hombros mas finos
+  ctx.fillStyle = "#120a20";
+  ctx.fillRect(p.x - 1, bodyY + 4, p.w + 2, 5);
+  ctx.fillStyle = "#7d5bd6";
+  ctx.fillRect(p.x - 1, bodyY + 4, p.w + 2, 2);
+
+  // Cabeza (cabello+cara) - humanoide
   ctx.beginPath();
-  ctx.arc(p.x + p.w / 2, p.y + 8, 14, Math.PI * 0.05, Math.PI * 0.95);
-  ctx.arc(p.x + p.w / 2, p.y + 3, 12, Math.PI * 1.05, Math.PI * 1.95, true);
-  ctx.closePath();
+  ctx.arc(p.x + p.w / 2, p.y + 10, 9, 0, Math.PI * 2);
   ctx.fillStyle = "#0d0818";
   ctx.fill();
-  // Cresta
   ctx.fillStyle = "#ff3b6b";
-  ctx.fillRect(p.x + p.w / 2 - 3, p.y - 1, 6, 5);
-  // Protector frontal
-  ctx.fillStyle = "#7d5bd6";
-  ctx.fillRect(p.x + p.w / 2 - 6, p.y + 1, 12, 4);
+  ctx.fillRect(p.x + p.w / 2 - 4, p.y + 2, 8, 3);
 
-  // Visor - ancho
-  const visX = p.x + p.w / 2 + (p.facing > 0 ? 7 : -13);
+  // Visor
+  const visX = p.x + p.w / 2 + (p.facing > 0 ? 4 : -9);
   ctx.fillStyle = "#ff3b6b";
-  ctx.fillRect(visX, p.y + 5, 8, 5);
-  ctx.fillStyle = "rgba(255,220,230,0.8)";
-  ctx.fillRect(visX, p.y + 5, 2, 3);
+  ctx.fillRect(visX, p.y + 6, 6, 4);
+  ctx.fillStyle = "rgba(255,220,230,0.9)";
+  ctx.fillRect(visX, p.y + 6, 2, 2);
 
-  // Brazo (arma) - mas prominente
-  const armX = p.x + p.w / 2 + (p.facing > 0 ? 9 : -16);
+  // Brazo (arma) mas delgado
+  const armX = p.x + p.w / 2 + (p.facing > 0 ? 6 : -14);
   ctx.fillStyle = "#0d0818";
-  ctx.fillRect(armX, p.y + 16, 16, 8);
+  ctx.fillRect(armX, p.y + 16, 14, 6);
   ctx.fillStyle = "#1a142b";
-  ctx.fillRect(armX, p.y + 16, 16, 2);
-  // Cañon largo
-  ctx.fillStyle = "#1a142b";
-  ctx.fillRect(armX + (p.facing > 0 ? 10 : -10), p.y + 14, 22, 6);
+  ctx.fillRect(armX + (p.facing > 0 ? 6 : -6), p.y + 14, 18, 4);
   ctx.fillStyle = "#7d5bd6";
-  ctx.fillRect(armX + (p.facing > 0 ? 10 : -10), p.y + 14, 22, 3);
+  ctx.fillRect(armX + (p.facing > 0 ? 6 : -6), p.y + 14, 18, 2);
 
-  // Bufanda roja mas larga
+  // Bufanda ligera
   ctx.fillStyle = "#ff3b6b";
-  ctx.fillRect(p.x + (p.facing > 0 ? p.w - 6 : 0), p.y + 16, 6, 24);
-  ctx.fillRect(p.x + (p.facing > 0 ? p.w - 14 : 0), p.y + 16, 14, 6);
+  ctx.fillRect(p.x + (p.facing > 0 ? p.w - 4 : 0), p.y + 14, 4, 12);
+  ctx.fillRect(p.x + (p.facing > 0 ? p.w - 10 : 0), p.y + 14, 10, 4);
 
   // Escudo activo
   if (p.shield > 0) {
