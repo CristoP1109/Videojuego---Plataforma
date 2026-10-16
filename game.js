@@ -926,13 +926,13 @@ function drawBackground() {
     skyTop = "#1a0f30"; skyMid = "#3a1a4a"; skyLow = "#7a2f57"; glow = "#ff8a3d"; glowAlpha = 0.45;
     far = "#3d2a5c"; mid = "#2a1a45"; near = "#1a0f30";
   } else if (lv === 1) {
-    // Nivel 1: DESIERTO (calido/arenoso, contraste)
+    // Nivel 1: DESIERTO (horizonte y dunas)
     skyTop = "#f0c94a"; skyMid = "#f29a3e"; skyLow = "#f06a2a"; glow = "#ffb84d"; glowAlpha = 0.5;
     far = "#f2d98a"; mid = "#e6b86e"; near = "#d89a56";
   } else if (lv === 2) {
-    // Nivel 2: INDUSTRIAL/NOCTURNO METAL SLUG (mas frio, mas duro)
-    skyTop = "#0f172a"; skyMid = "#1f2f3f"; skyLow = "#2f4f4f"; glow = "#ff5b3d"; glowAlpha = 0.6;
-    far = "#1a2438"; mid = "#16202f"; near = "#111824";
+    // Nivel 2: CARCEL ATARDUCER (celdas y bloque penitenciario)
+    skyTop = "#1a0f30"; skyMid = "#3a1a4a"; skyLow = "#7a2f57"; glow = "#ff8a3d"; glowAlpha = 0.5;
+    far = "#2a1a3c"; mid = "#1a142c"; near = "#111824";
   }
 
   const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
@@ -950,12 +950,39 @@ function drawBackground() {
   ctx.fillStyle = glowGrad;
   ctx.fillRect(0, 0, W, H);
 
-  drawMoon();
+  if (lv === 1) drawSun(); else drawMoon();
 
-  // Ciudad en 3 capas (perspectiva atmosferica: lejos=claro, cerca=oscuro)
-  drawSkyline(0.12, 320, far, 150, 30, 0.25, skyLow);
-  drawSkyline(0.30, 380, mid, 130, 46, 0.5, skyLow);
-  drawSkyline(0.55, 430, near, 150, 72, 0.9, skyLow);
+  // Fondo por bioma segun nivel
+  if (lv === 1) {
+    // Para nivel desierto, mostrar dunas (lejos=claro, cerca=oscuro)
+    drawDesert(0.20, 415, far, near);
+    drawDesert(0.50, 470, mid, near);
+  } else if (lv === 2) {
+    // Para nivel carcel, mostrar bloques de celdas
+    drawPrison(0.12, 320, far, 140, 50, 0.25);
+    drawPrison(0.30, 380, mid, 120, 70, 0.5);
+    drawPrison(0.55, 430, near, 150, 100, 0.9);
+  } else {
+    drawSkyline(0.12, 320, far, 150, 30, 0.25, skyLow);
+    drawSkyline(0.30, 380, mid, 130, 46, 0.5, skyLow);
+    drawSkyline(0.55, 430, near, 150, 72, 0.9, skyLow);
+  }
+}
+
+function drawSun() {
+  const sx = W * 0.30, sy = 120;
+  const g = ctx.createRadialGradient(sx, sy, 10, sx, sy, 130);
+  g.addColorStop(0, "rgba(255,241,200,0.85)");
+  g.addColorStop(0.4, "rgba(255,214,120,0.35)");
+  g.addColorStop(1, "rgba(255,214,120,0)");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(sx, sy, 130, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "rgba(255,248,220,0.95)";
+  ctx.beginPath();
+  ctx.arc(sx, sy, 34, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 function drawMoon() {
@@ -987,13 +1014,15 @@ function drawSkyline(parallax, baseY, color, height, step, winAlpha, skyLow) {
     ctx.fillStyle = color;
     ctx.fillRect(bx, baseY - h, step - 6, h + 220);
 
-    // Ventanas encendidas: estaticas (sin pulso) para evitar estroboscopio
-    ctx.globalAlpha = winAlpha * 0.7;
+    // Ventanas estaticas (sin ninguna dependencia de posicion/tiempo para evitar parpadeo)
+    ctx.globalAlpha = winAlpha * 0.6;
     for (let wy = baseY - h + 14; wy < baseY - 6; wy += 16) {
       for (let wx = bx + 6; wx < bx + step - 12; wx += 16) {
-        const seed = (Math.sin(wx * 1.7 + wy * 1.3) * 43758.5453) % 1;
-        if (seed > 0.65) {
-          ctx.fillStyle = seed > 0.82 ? PAL.winPink : PAL.winWarm;
+        // Semilla deterministica fija por tile para evitar que parpadee al moverse la camara
+        const seed = ((Math.floor(wx / 16) * 131542391) ^ (Math.floor(wy / 16) * 1000000009)) % 0x10000;
+        if ((seed / 0x10000) > 0.7) {
+          const cseed = (seed >> 4) % 0x10000;
+          ctx.fillStyle = (cseed / 0x10000) > 0.5 ? PAL.winPink : PAL.winWarm;
           ctx.fillRect(wx, wy, 6, 8);
         }
       }
@@ -1033,6 +1062,66 @@ function drawForeground() {
     ctx.beginPath(); ctx.arc(lx, ly, 12, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = PAL.danger;
     ctx.beginPath(); ctx.arc(lx, ly, 6, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function drawDesert(parallax, baseY, colorLight, colorDark) {
+  const offset = -camera.x * parallax + shakeX * parallax;
+  const step = 120;
+  const start = Math.floor(-offset / step) * step - step;
+  for (let x = start; x < LEVEL_W + step * 2; x += step) {
+    const bx = x + offset;
+    if (bx < -step || bx > W + step * 2) continue;
+    const r = (Math.sin(x * 0.01) * 43758.5453) % 1;
+    const h = 60 + (r + 1) * 40;
+    ctx.fillStyle = colorLight;
+    ctx.beginPath();
+    ctx.moveTo(bx, baseY);
+    ctx.lineTo(bx + step / 2, baseY - h);
+    ctx.lineTo(bx + step, baseY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = colorDark;
+    ctx.fillRect(bx, baseY, step, 160);
+  }
+}
+
+function drawPrison(parallax, baseY, colorWall, wallH, cellW, winAlpha) {
+  const offset = -camera.x * parallax + shakeX * parallax;
+  const step = cellW * 2 + 24;
+  const start = Math.floor(-offset / step) * step - step;
+  for (let x = start; x < LEVEL_W + step * 2; x += step) {
+    const bx = x + offset;
+    if (bx < -step || bx > W + step * 2) continue;
+    // Bloque de pared
+    ctx.fillStyle = colorWall;
+    ctx.fillRect(bx, baseY - wallH, step, wallH + 240);
+    // Marco interior oscuro donde van las celdas
+    ctx.fillStyle = "#0a0614";
+    ctx.fillRect(bx + 6, baseY - wallH + 12, step - 12, wallH - 24);
+
+    const cy = baseY - wallH + 26;
+    const ch = wallH - 52;
+    const cw = (step - 40) / 2;
+    ctx.globalAlpha = winAlpha * 0.55;
+    for (let c = 0; c < 2; c++) {
+      const cx = bx + 16 + c * (cw + 8);
+      // Celda
+      ctx.fillStyle = "#1a162b";
+      ctx.fillRect(cx, cy, cw, ch);
+      // Reja (barrotes verticales)
+      ctx.fillStyle = "rgba(150,150,170,0.55)";
+      for (let bar = cx + 4; bar < cx + cw - 3; bar += 7) {
+        ctx.fillRect(bar, cy + 6, 2, ch - 12);
+      }
+      // Travesaño
+      ctx.fillStyle = "rgba(120,120,140,0.5)";
+      ctx.fillRect(cx + 2, cy + ch * 0.5, cw - 4, 3);
+    }
+    ctx.globalAlpha = 1;
+    // Base del bloque
+    ctx.fillStyle = "#0a0614";
+    ctx.fillRect(bx, baseY - 8, step, 8);
   }
 }
 
