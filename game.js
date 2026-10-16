@@ -344,15 +344,34 @@ function save() {
 const lvl = (id) => upgrades[id] || 0;
 const priceOf = (it, l) => Math.round(it.price * (1 + 0.5 * l));
 
+function getEquippedWeapon() {
+  const hasRifle = lvl("rifle") > 0;
+  const hasPistol = lvl("pistol") > 0;
+  if (hasRifle && hasPistol) {
+    return upgrades.equippedWeapon || "rifle";
+  }
+  if (hasRifle) return "rifle";
+  if (hasPistol) return "pistol";
+  return "melee";
+}
+
+function setEquippedWeapon(w) {
+  if (w !== "rifle" && w !== "pistol" && w !== "melee") return;
+  upgrades.equippedWeapon = w;
+  save();
+}
+
 function weaponDmgMul() {
-  if (lvl("rifle") > 0) return 1.5;
-  if (lvl("pistol") > 0) return 1.2;
+  const w = getEquippedWeapon();
+  if (w === "rifle") return 1.5;
+  if (w === "pistol") return 1.2;
   return 1.0;
 }
 
 function weaponCdMul() {
-  if (lvl("rifle") > 0) return 0.8; // -20%
-  if (lvl("pistol") > 0) return 0.9; // -10%
+  const w = getEquippedWeapon();
+  if (w === "rifle") return 0.8; // -20%
+  if (w === "pistol") return 0.9; // -10%
   return 1.0;
 }
 
@@ -468,9 +487,13 @@ function updatePlayer(dt) {
   p.attackTime = Math.max(0, p.attackTime - dt);
   if (attackKey() && p.attackCd <= 0 && p.attackTime <= 0) {
     const cdMul = weaponCdMul();
+    const w = getEquippedWeapon();
     p.attackTime = ATTACK_TIME;
     p.attackCd = ATTACK_CD * cdMul;
     p.attackHits = new Set();
+    if (w === "pistol" || w === "rifle") {
+      firePlayerShot(w);
+    }
     doAttackHit();
   }
 
@@ -614,14 +637,8 @@ function doAttackHit() {
       hurtEnemy(e, weaponDmgMul());
     }
   }
-  for (const pr of projectiles) {
-    if (!pr.alive || p.attackHits.has(pr)) continue;
-    if (overlap(box, pr)) {
-      p.attackHits.add(pr);
-      pr.alive = false;
-      spawnSpark(pr.x, pr.y);
-    }
-  }
+  // Desactivar destruccion de proyectiles enemigos con puño para evitar conflicto
+  // Los disparos del jugador no van en esta lista; enemigos siguen atacando
 }
 
 function hurtEnemy(e, dmg) {
@@ -780,12 +797,42 @@ function updateProjectiles(dt) {
     pr.y += pr.vy * dt;
     pr.life -= dt;
     if (pr.life <= 0 || pr.x < camera.x - 100 || pr.x > camera.x + W + 100) pr.alive = false;
-    if (pr.alive && player.invuln <= 0 && overlap(player, pr)) {
+    if (pr.alive && player.invuln <= 0 && !pr.player && overlap(player, pr)) {
       pr.alive = false;
       damagePlayer(1, pr.x);
     }
+    if (pr.alive && pr.player) {
+      for (const e of enemies) {
+        if (!e.alive) continue;
+        if (overlap(pr, e)) {
+          pr.alive = false;
+          const dmg = pr.dmg || weaponDmgMul();
+          hurtEnemy(e, dmg);
+          spawnSpark(pr.x, pr.y);
+          break;
+        }
+      }
+    }
   }
   projectiles = projectiles.filter((pr) => pr.alive);
+}
+
+function firePlayerShot(w) {
+  const p = player;
+  const cx = p.x + p.w / 2;
+  const cy = p.y + 12;
+  const dir = p.facing;
+  let sp = 520;
+  let wpx = 10, hpx = 8;
+  let dmgMul = weaponDmgMul();
+  if (w === "rifle") { sp = 640; wpx = 14; hpx = 8; }
+  if (w === "pistol") { sp = 560; wpx = 10; hpx = 6; }
+  projectiles.push({
+    x: cx, y: cy, w: wpx, h: hpx,
+    vx: dir * sp, vy: 0,
+    life: 3.5, alive: true, player: true, dmg: dmgMul,
+  });
+  spawnSpark(cx, cy);
 }
 
 function damagePlayer(amount, sourceX) {
