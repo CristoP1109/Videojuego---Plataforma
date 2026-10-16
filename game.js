@@ -310,6 +310,11 @@ const SHOP_ITEMS = [
   { id: "magnet", name: "Iman de monedas", desc: "Atrae monedas cercanas", price: 40, max: 1 },
   { id: "shield", name: "Chaleco", desc: "Absorbe 1 golpe por vida", price: 50, max: 1 },
   { id: "double", name: "Doble salto", desc: "Segundo salto en el aire", price: 80, max: 1 },
+  { id: "pistol", name: "Pistola", desc: "+20% daño · -10% CD ataque", price: 60, max: 1 },
+  { id: "rifle", name: "Rifle", desc: "+50% daño · -20% CD ataque", price: 120, max: 1 },
+  { id: "cos_cyan", name: "Bufanda Cian", desc: "Cosmetico: bufanda cian", price: 20, max: 1 },
+  { id: "cos_gold", name: "Casco Dorado", desc: "Cosmetico: casco dorado", price: 20, max: 1 },
+  { id: "cos_green", name: "Visor Verde", desc: "Cosmetico: visor verde neon", price: 20, max: 1 },
 ];
 
 let wallet = 0;        // banco persistente de monedas
@@ -338,6 +343,22 @@ function save() {
 
 const lvl = (id) => upgrades[id] || 0;
 const priceOf = (it, l) => Math.round(it.price * (1 + 0.5 * l));
+
+function weaponDmgMul() {
+  if (lvl("rifle") > 0) return 1.5;
+  if (lvl("pistol") > 0) return 1.2;
+  return 1.0;
+}
+
+function weaponCdMul() {
+  if (lvl("rifle") > 0) return 0.8; // -20%
+  if (lvl("pistol") > 0) return 0.9; // -10%
+  return 1.0;
+}
+
+function getCosmetic(id) {
+  return upgrades[id] || 0;
+}
 
 function buyItem(i) {
   const it = SHOP_ITEMS[i];
@@ -446,8 +467,9 @@ function updatePlayer(dt) {
   p.attackCd = Math.max(0, p.attackCd - dt);
   p.attackTime = Math.max(0, p.attackTime - dt);
   if (attackKey() && p.attackCd <= 0 && p.attackTime <= 0) {
+    const cdMul = weaponCdMul();
     p.attackTime = ATTACK_TIME;
-    p.attackCd = ATTACK_CD;
+    p.attackCd = ATTACK_CD * cdMul;
     p.attackHits = new Set();
     doAttackHit();
   }
@@ -589,7 +611,7 @@ function doAttackHit() {
     if (!e.alive || p.attackHits.has(e)) continue;
     if (overlap(box, e)) {
       p.attackHits.add(e);
-      hurtEnemy(e, 1);
+      hurtEnemy(e, weaponDmgMul());
     }
   }
   for (const pr of projectiles) {
@@ -1415,11 +1437,15 @@ function drawPlayer() {
   ctx.arc(p.x + p.w / 2, p.y + 9, 8, 0, Math.PI * 2);
   ctx.fillStyle = "#0d0818";
   ctx.fill();
-  ctx.fillStyle = "#ff3b6b";
+  let crestCol = "#ff3b6b";
+  if (upgrades.cos_gold) crestCol = "#ffd84a";
+  ctx.fillStyle = crestCol;
   ctx.fillRect(p.x + p.w / 2 - 3, p.y + 2, 6, 2);
 
   const visX = p.x + p.w / 2 + (p.facing > 0 ? 3 : -7);
-  ctx.fillStyle = "#ff3b6b";
+  let visorCol = "#ff3b6b";
+  if (upgrades.cos_green) visorCol = "#4aff9d";
+  ctx.fillStyle = visorCol;
   ctx.fillRect(visX, p.y + 5, 5, 3);
   ctx.fillStyle = "rgba(255,220,230,0.9)";
   ctx.fillRect(visX, p.y + 5, 1, 2);
@@ -1432,7 +1458,9 @@ function drawPlayer() {
   ctx.fillStyle = "#7d5bd6";
   ctx.fillRect(armX + (p.facing > 0 ? 4 : -4), p.y + 12, 14, 2);
 
-  ctx.fillStyle = "#ff3b6b";
+  let scarfCol = "#ff3b6b";
+  if (upgrades.cos_cyan) scarfCol = "#4a9dff";
+  ctx.fillStyle = scarfCol;
   ctx.fillRect(p.x + (p.facing > 0 ? p.w - 3 : 0), p.y + 13, 3, 10);
   ctx.fillRect(p.x + (p.facing > 0 ? p.w - 8 : 0), p.y + 13, 8, 3);
 
