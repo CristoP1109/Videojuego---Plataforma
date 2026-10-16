@@ -1187,17 +1187,23 @@ function drawEnemy(e) {
   const hit = e.flash > 0; // destello blanco al recibir dano
 
   if (e.type === "walker" || e.type === "hopper") {
+    const legSwing = Math.abs(Math.sin(e.t * 8 + e.x * 0.01)) * 4;
     ctx.fillStyle = hit ? "#ffffff" : "#120a20";
-    ctx.fillRect(e.x, e.y, e.w, e.h);
+    ctx.fillRect(e.x, e.y, e.w, e.h - 2);
     ctx.fillStyle = hit ? "#ffffff" : "#7d5bd6";
     ctx.fillRect(e.x, e.y, e.w, 3);
+    ctx.fillStyle = "#0d0818";
+    ctx.fillRect(e.x + 4 + legSwing, e.y + e.h - 8, 6, 8);
+    ctx.fillRect(e.x + e.w - 10 - legSwing, e.y + e.h - 8, 6, 8);
     ctx.fillStyle = "#ff3b6b";
     const eyeX = e.dir > 0 ? e.x + e.w - 12 : e.x + 6;
     ctx.fillRect(eyeX, e.y + 12, 6, 5);
+    ctx.fillStyle = "rgba(255,180,200,0.6)";
+    ctx.fillRect(eyeX, e.y + 12, 2, 2);
     if (e.type === "hopper") {
-      // patas
-      ctx.fillRect(e.x + 4, e.y + e.h, 8, 4);
-      ctx.fillRect(e.x + e.w - 12, e.y + e.h, 8, 4);
+      ctx.fillStyle = "#0d0818";
+      ctx.fillRect(e.x + 4, e.y + e.h - 3, 8, 3);
+      ctx.fillRect(e.x + e.w - 12, e.y + e.h - 3, 8, 3);
     }
 
   } else if (e.type === "flyer") {
@@ -1206,45 +1212,56 @@ function drawEnemy(e) {
     ctx.beginPath();
     ctx.ellipse(e.x + e.w / 2, e.y + e.h / 2, e.w / 2, e.h / 2, 0, 0, Math.PI * 2);
     ctx.fill();
-    // alas (baten)
-    const flap = Math.sin(e.t * 16) * 8;
+    ctx.fillStyle = hit ? "#ffffff" : "#7d5bd6";
+    ctx.beginPath();
+    ctx.ellipse(e.x + e.w / 2, e.y + e.h / 2 - 6, e.w * 0.4, e.h * 0.4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // alas (baten) Metal Slug-like
+    const flap = Math.sin(e.t * 16) * 10;
     ctx.fillStyle = hit ? "#ffffff" : "#2a1a45";
     ctx.beginPath();
     ctx.moveTo(e.x + e.w / 2, e.y + e.h / 2);
-    ctx.lineTo(e.x - 8, e.y + e.h / 2 - 6 + flap);
-    ctx.lineTo(e.x + 2, e.y + e.h / 2 + 6);
+    ctx.lineTo(e.x - 10, e.y + e.h / 2 - 8 + flap);
+    ctx.lineTo(e.x + 4, e.y + e.h / 2 + 4);
     ctx.closePath();
     ctx.fill();
     ctx.beginPath();
     ctx.moveTo(e.x + e.w / 2, e.y + e.h / 2);
-    ctx.lineTo(e.x + e.w + 8, e.y + e.h / 2 - 6 - flap);
-    ctx.lineTo(e.x + e.w - 2, e.y + e.h / 2 + 6);
+    ctx.lineTo(e.x + e.w + 10, e.y + e.h / 2 - 8 - flap);
+    ctx.lineTo(e.x + e.w - 4, e.y + e.h / 2 + 4);
     ctx.closePath();
     ctx.fill();
     ctx.fillStyle = "#ff3b6b";
-    ctx.fillRect(e.x + e.w / 2 - 5, e.y + e.h / 2 - 3, 4, 4);
-    ctx.fillRect(e.x + e.w / 2 + 1, e.y + e.h / 2 - 3, 4, 4);
+    ctx.fillRect(e.x + e.w / 2 - 5, e.y + e.h / 2 - 2, 4, 4);
+    ctx.fillRect(e.x + e.w / 2 + 1, e.y + e.h / 2 - 2, 4, 4);
+    ctx.fillStyle = "rgba(255,180,200,0.6)";
+    ctx.fillRect(e.x + e.w / 2 - 4, e.y + e.h / 2 - 2, 2, 2);
+    ctx.fillRect(e.x + e.w / 2 + 2, e.y + e.h / 2 - 2, 2, 2);
 
   } else if (e.type === "turret") {
     ctx.fillStyle = hit ? "#ffffff" : "#1a1030";
     ctx.fillRect(e.x, e.y, e.w, e.h);
+    ctx.fillStyle = hit ? "#ffffff" : "#7d5bd6";
+    ctx.fillRect(e.x, e.y, e.w, 4);
     ctx.fillStyle = hit ? "#ffffff" : "#4a3080";
-    ctx.fillRect(e.x + 2, e.y + 2, e.w - 4, 6);
+    ctx.fillRect(e.x + 2, e.y + 4, e.w - 4, 8);
     // cañon
     ctx.fillStyle = hit ? "#ffffff" : "#241640";
-    const gx = e.dir > 0 ? e.x + e.w : e.x - 16;
-    ctx.fillRect(gx, e.y + 10, 16, 8);
+    const gx = e.dir > 0 ? e.x + e.w : e.x - 18;
+    ctx.fillRect(gx, e.y + 8, 18, 10);
+    ctx.fillStyle = "#7d5bd6";
+    ctx.fillRect(gx, e.y + 8, 18, 2);
     // telegrafiado: parpadea rojo antes de disparar
     const warn = e.shootTimer < 0.5;
     ctx.fillStyle = warn ? "#ff3b6b" : "#6a4bb0";
     ctx.beginPath();
-    ctx.arc(e.x + e.w / 2, e.y + 24, 6, 0, Math.PI * 2);
+    ctx.arc(e.x + e.w / 2, e.y + 26, 6, 0, Math.PI * 2);
     ctx.fill();
     if (warn) {
-      ctx.strokeStyle = "rgba(255,59,107,0.6)";
+      ctx.strokeStyle = "rgba(255,59,107,0.8)";
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(e.x + e.w / 2, e.y + 24, 12, 0, Math.PI * 2);
+      ctx.arc(e.x + e.w / 2, e.y + 26, 12, 0, Math.PI * 2);
       ctx.stroke();
     }
     // barra de vida de la torreta
@@ -1258,36 +1275,46 @@ function drawEnemy(e) {
   } else if (e.type === "miniboss" || e.type === "boss") {
     const big = e.type === "boss";
     const cx = e.x + e.w / 2, cy = e.y + e.h / 2;
-    // cuerpo
+    // Armadura (maciza, estilo MS)
     ctx.fillStyle = hit ? "#ffffff" : (big ? "#3a0d22" : "#241040");
     ctx.fillRect(e.x, e.y, e.w, e.h);
-    // hombros
+    ctx.fillStyle = hit ? "#ffffff" : (big ? "#ff5b3d" : "#7d5bd6");
+    ctx.fillRect(e.x, e.y, e.w, 4);
+    // Hombreras
     ctx.fillStyle = hit ? "#ffffff" : (big ? "#5a1030" : "#3a1a60");
-    ctx.fillRect(e.x - 6, e.y + 6, e.w + 12, 14);
-    // visor
+    ctx.fillRect(e.x - 8, e.y + 6, e.w + 16, 16);
+    ctx.fillStyle = hit ? "#ffffff" : (big ? "#ff8a3d" : "#7d5bd6");
+    ctx.fillRect(e.x - 8, e.y + 6, e.w + 16, 3);
+    // Casco/visor
+    ctx.fillStyle = "#0d0818";
+    ctx.fillRect(e.x + 8, e.y + 10, e.w - 16, 12);
     ctx.fillStyle = "#ff3b6b";
-    const ex = e.dir > 0 ? e.x + e.w - 22 : e.x + 8;
-    ctx.fillRect(ex, e.y + 16, 14, 6);
-    // nucleo que late
+    const ex = e.dir > 0 ? e.x + e.w - 26 : e.x + 10;
+    ctx.fillRect(ex, e.y + 14, 14, 6);
+    ctx.fillStyle = "rgba(255,180,200,0.6)";
+    ctx.fillRect(ex, e.y + 14, 2, 2);
+    // Nucleo que late
     const pulse = 4 + Math.abs(Math.sin(e.t * 3)) * 6;
-    ctx.fillStyle = "rgba(255,59,107,0.35)";
+    ctx.fillStyle = "rgba(255,59,107,0.4)";
     ctx.beginPath();
-    ctx.arc(cx, cy + 6, pulse + 8, 0, Math.PI * 2);
+    ctx.arc(cx, cy + 6, pulse + 10, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = "#ff6b8f";
+    ctx.fillStyle = big ? "#ff8a3d" : "#ff6b8f";
     ctx.beginPath();
     ctx.arc(cx, cy + 6, pulse, 0, Math.PI * 2);
     ctx.fill();
-    // canon
+    // Cañon grueso
     ctx.fillStyle = hit ? "#ffffff" : (big ? "#7a1538" : "#4a2a80");
-    const gx = e.dir > 0 ? e.x + e.w : e.x - 20;
-    ctx.fillRect(gx, e.y + e.h - 26, 20, 12);
+    const gx = e.dir > 0 ? e.x + e.w : e.x - 24;
+    ctx.fillRect(gx, e.y + e.h - 30, 24, 14);
+    ctx.fillStyle = (big ? "#ff5b3d" : "#7d5bd6");
+    ctx.fillRect(gx, e.y + e.h - 30, 24, 2);
     // barra de vida local
     if (e.maxHp > 1) {
       ctx.fillStyle = "#3a2a5a";
-      ctx.fillRect(e.x, e.y - 10, e.w, 5);
+      ctx.fillRect(e.x, e.y - 12, e.w, 6);
       ctx.fillStyle = big ? "#ff3b6b" : "#ffb13b";
-      ctx.fillRect(e.x, e.y - 10, e.w * (e.hp / e.maxHp), 5);
+      ctx.fillRect(e.x, e.y - 12, e.w * (e.hp / e.maxHp), 6);
     }
   }
 }
